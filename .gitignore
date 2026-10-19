@@ -1,0 +1,18 @@
+# Fichiers compilés et objets
+*.o
+test_ex1
+test_ex2
+test_ex3
+demo_matrices
+
+# Dossiers de debug macOS / GDB
+*.dSYM/
+
+# Fichiers système et éditeur
+.DS_Store
+.vscode/
+__MACOSX/
+
+# Fichiers temporaires ou archives
+*.zip
+*.tar.gz
