@@ -76,3 +76,19 @@ valgrind --leak-check=full ./test_ex1   # idem test_ex2, test_ex3, demo_matrices
 Résultats : `test_ex1` 16/16, `test_ex2` 14/14, `test_ex3` 14/14,
 aucune fuite ni erreur mémoire signalée par valgrind, scénarios
 `demo_matrices` du workflow GitHub conformes.
+
+## Questions de réflexion
+
+### Exercice 1 — Allocation et destruction
+
+- **Q3.1 (Pointeur pour `mat_detruire`)** : `mat_detruire` prend un pointeur `Matrice *` pour pouvoir modifier directement la variable de l'appelant. Si on passait par valeur, la fonction travaillerait sur une copie : la mémoire serait libérée, mais la variable d'origine ne serait pas remise à `MATRICE_VIDE` et contiendrait encore des adresses invalides.
+- **Q3.2 (Nombre d'appels `calloc` et `free`)** : Pour une matrice $n \times p$, il faut $1 + n$ appels à `calloc` (1 pour le tableau de pointeurs et $n$ pour les lignes), et autant d'appels à `free` pour la destruction complète. Si la $k$-ième ligne échoue, il faut libérer les $k$ lignes déjà allouées plus le tableau de pointeurs, soit $k + 1$ libérations.
+- **Q3.3 (Double destruction et copie)** : C'est sans danger car `mat_detruire` remet la matrice à `MATRICE_VIDE` à la fin (donc `coef` devient `NULL`). Un deuxième appel ne fait rien grâce au test `if (m->coef != NULL)`. En revanche, avec `Matrice b = a;`, `a` et `b` partagent les mêmes pointeurs. Détruire `a` puis `b` provoque un double `free` sur la même zone mémoire, ce qui est une erreur grave.
+- **Q3.4 (Initialisation à `MATRICE_VIDE`)** : Pour garantir que la matrice de l'appelant est dans un état propre dès le départ. Si la fonction renvoie une erreur (par exemple des dimensions invalides), `*res` reste une matrice vide bien définie et non une variable contenant des valeurs aléatoires.
+
+### Exercice 2 — Entrées-sorties
+
+- **Q4.1 (Matrice locale dans `mat_lire`)** : Pour ne pas laisser une matrice incomplète dans `*res` si la lecture échoue en cours de route (fichier tronqué ou mal formé). En cas d'erreur, on détruit la matrice locale `tmp` et `*res` reste vide. On ne transfère le résultat dans `*res` que si toute la lecture a réussi.
+- **Q4.2 (Format et principe de lecture)** : Non, la lecture ne vérifie pas les retours à la ligne car `fscanf` ignore les espaces et les sauts de ligne. Ce n'est pas gênant. Le principe « tolérant en lecture, strict en écriture » signifie qu'on accepte des fichiers avec des espacements variés pour être souple, mais qu'on enregistre toujours nos fichiers dans un format canonique et régulier.
+- **Q4.3 (Deux matrices dans un même fichier)** : Comme `mat_lire` s'arrête juste après le dernier nombre lu, il suffit d'appeler une deuxième fois `mat_lire(f, &m2)` sur le même flux `f` pour lire la deuxième matrice, sans avoir besoin de rouvrir le fichier.
+- **Q4.4 (Rôle de `fflush` et `fclose`)** : `mat_ecrire` appelle `fflush` pour forcer l'écriture immédiate des données sur le disque et vérifier qu'il n'y a pas d'erreur d'écriture (disque plein). Cela ne dispense pas de vérifier `fclose`, car la fermeture du fichier libère les ressources système et peut elle aussi échouer.
