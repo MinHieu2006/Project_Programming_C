@@ -92,3 +92,20 @@ aucune fuite ni erreur mémoire signalée par valgrind, scénarios
 - **Q4.2 (Format et principe de lecture)** : Non, la lecture ne vérifie pas les retours à la ligne car `fscanf` ignore les espaces et les sauts de ligne. Ce n'est pas gênant. Le principe « tolérant en lecture, strict en écriture » signifie qu'on accepte des fichiers avec des espacements variés pour être souple, mais qu'on enregistre toujours nos fichiers dans un format canonique et régulier.
 - **Q4.3 (Deux matrices dans un même fichier)** : Comme `mat_lire` s'arrête juste après le dernier nombre lu, il suffit d'appeler une deuxième fois `mat_lire(f, &m2)` sur le même flux `f` pour lire la deuxième matrice, sans avoir besoin de rouvrir le fichier.
 - **Q4.4 (Rôle de `fflush` et `fclose`)** : `mat_ecrire` appelle `fflush` pour forcer l'écriture immédiate des données sur le disque et vérifier qu'il n'y a pas d'erreur d'écriture (disque plein). Cela ne dispense pas de vérifier `fclose`, car la fermeture du fichier libère les ressources système et peut elle aussi échouer.
+### Exercice 3 — Calcul matriciel
+
+- **Q5.1 (Utilisation de `const`)** : `const Matrice *a` empêche de modifier directement les membres de la structure, mais pas les coefficients accessibles par `a->coef[i][j]`. Pour empêcher leur modification, il faudrait également rendre les entiers pointés constants.
+
+- **Q5.2 (Résultat identique à une entrée)** : On refuse que `res` soit égal à `a` ou `b`, car la fonction commence par initialiser `*res` à `MATRICE_VIDE`. Cela ferait perdre les données de la matrice d'entrée et pourrait provoquer une fuite mémoire.
+
+- **Q5.3 (Nombre de multiplications)** : Pour multiplier une matrice de taille \(n \times p\) par une matrice de taille \(p \times q\), il faut \(n \times p \times q\) multiplications. Pour deux matrices de taille \(1000 \times 1000\), cela représente \(1000^3 = 10^9\), soit un milliard de multiplications.
+
+- **Q5.4 (Dépassement d'entiers)** : Calculer directement `int s = a + b` peut provoquer un dépassement d'entier signé avant même qu'on puisse le vérifier. On utilise donc `long long` pour effectuer le calcul, puis on vérifie que le résultat est compris entre `INT_MIN` et `INT_MAX` avant de le convertir en `int`.
+
+### Exercice 4 — Démonstration complète
+
+- **Q6.1 (Affichage des erreurs)** : `mat_lire` renvoie un code d'erreur sans afficher de message. C'est au programme principal de gérer son affichage. Cela permet de réutiliser la bibliothèque dans différents programmes sans imposer une manière de présenter les erreurs.
+
+- **Q6.2 (Vérification de `fclose`)** : Dans `sauvegarder`, il faut vérifier `fclose`, car une erreur d'écriture peut encore apparaître pendant la fermeture du fichier. Dans `charger`, les erreurs de lecture sont déjà prises en charge par `mat_lire`.
+
+- **Q6.3 (Libération des matrices)** : Si l'enregistrement échoue après le calcul, il faut libérer les trois matrices `a`, `b` et `r`. Le programme utilise `goto nettoyage` pour appeler `mat_detruire` sur chacune d'elles, ce qui évite les fuites mémoire.
